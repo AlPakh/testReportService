@@ -90,7 +90,8 @@ namespace ConversionService.Infrastructure.Messaging
                 Port = _options.Port,
                 UserName = _options.Username,
                 Password = _options.Password,
-                VirtualHost = _options.VirtualHost
+                VirtualHost = _options.VirtualHost,
+                DispatchConsumersAsync = true
             };
 
             _connection = factory.CreateConnection();
