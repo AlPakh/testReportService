@@ -1,3 +1,5 @@
+using ConversionService.Infrastructure.DependencyInjection;
+using Npgsql;
 
 namespace ConversionService.Api
 {
@@ -7,27 +9,35 @@ namespace ConversionService.Api
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            string baseConnectionString =
+                builder.Configuration.GetConnectionString("Postgres")
+                ?? throw new InvalidOperationException("Connection string 'Postgres' is not configured.");
+
+            string dbPassword =
+                builder.Configuration["DbPassword"]
+                ?? throw new InvalidOperationException("Database password is not configured.");
+
+            var csBuilder = new NpgsqlConnectionStringBuilder(baseConnectionString)
+            {
+                Password = dbPassword
+            };
+
+            builder.Configuration["ConnectionStrings:Postgres"] = csBuilder.ConnectionString;
 
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddInfrastructure(builder.Configuration);
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
-
             app.UseAuthorization();
-
-
             app.MapControllers();
 
             app.Run();
