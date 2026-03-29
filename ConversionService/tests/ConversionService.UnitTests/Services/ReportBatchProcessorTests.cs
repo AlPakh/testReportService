@@ -83,9 +83,10 @@ namespace ConversionService.UnitTests.Application.Services
             int processedCount = await service.ProcessPendingAsync(100);
 
             Assert.AreEqual(1, processedCount);
-            Assert.AreEqual(ReportRequestStatus.Completed, request.Status);
+            Assert.AreEqual(Domain.Enums.ReportRequestStatus.Completed, request.Status);
+
             Assert.AreEqual(1, batchRepository.Batches.Count);
-            Assert.AreEqual(ProcessingBatchStatus.Completed, batchRepository.Batches[0].Status);
+            Assert.AreEqual(Domain.Enums.ProcessingBatchStatus.Completed, batchRepository.Batches[0].Status);
 
             Assert.AreEqual(1, resultRepository.Results.Count);
             Assert.AreEqual(300, resultRepository.Results[0].ViewsCount);
@@ -93,8 +94,10 @@ namespace ConversionService.UnitTests.Application.Services
             Assert.AreEqual(20m, resultRepository.Results[0].Ratio);
 
             Assert.AreEqual(2, unitOfWork.SaveChangesCalls);
-            Assert.AreEqual(2, statusCache.StoredResponses.Count);
-            Assert.AreEqual("Completed", statusCache.StoredResponses.Last().Value.Status);
+
+            Assert.AreEqual(1, statusCache.StoredResponses.Count);
+            Assert.IsTrue(statusCache.StoredResponses.ContainsKey(request.Id));
+            Assert.AreEqual("Completed", statusCache.StoredResponses[request.Id].Status);
         }
 
         [TestMethod]
@@ -280,6 +283,8 @@ namespace ConversionService.UnitTests.Application.Services
         {
             public Dictionary<Guid, ReportResponseDto> StoredResponses { get; } = new();
 
+            public int SetCalls { get; private set; }
+
             public Task<ReportResponseDto?> GetAsync(Guid requestId, CancellationToken cancellationToken = default)
             {
                 StoredResponses.TryGetValue(requestId, out ReportResponseDto? response);
@@ -288,6 +293,7 @@ namespace ConversionService.UnitTests.Application.Services
 
             public Task SetAsync(ReportResponseDto response, CancellationToken cancellationToken = default)
             {
+                SetCalls++;
                 StoredResponses[response.RequestId] = response;
                 return Task.CompletedTask;
             }
