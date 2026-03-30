@@ -26,6 +26,34 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: conversionservice-api
+    depends_on:
+      - postgres
+      - rabbitmq
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};Include Error Detail=true
+
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Port: 5672
+      RabbitMq__Username: ${RABBITMQ_DEFAULT_USER}
+      RabbitMq__Password: ${RABBITMQ_DEFAULT_PASS}
+      RabbitMq__VirtualHost: /
+      RabbitMq__QueueName: report-requests
+
+      BatchProcessing__BatchSize: 20
+      BatchProcessing__ScanIntervalSeconds: 10
+
+      DbPassword: ${POSTGRES_PASSWORD}
+
 volumes:
   postgres_data:
   rabbitmq_data:
